@@ -3,16 +3,17 @@ package app
 import (
 	"fmt"
 	"log"
-	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/wanna-beat-by-bit/goMetricService/internal/app/config"
-	"github.com/wanna-beat-by-bit/goMetricService/internal/app/http-server/handlers/sendData"
+	"github.com/wanna-beat-by-bit/goMetricService/internal/app/http-server/handler"
+	"github.com/wanna-beat-by-bit/goMetricService/internal/app/http-server/server"
+	"github.com/wanna-beat-by-bit/goMetricService/internal/app/service"
 )
 
 type App struct {
 	config *config.Config
-	srv    http.Server
+	srv    *server.Server
 }
 
 func New() (*App, error) {
@@ -20,21 +21,20 @@ func New() (*App, error) {
 
 	a.config = config.MustLoad()
 
-	router := chi.NewRouter()
-	router.Get("/test", sendData.New())
+	srvc := service.New()
 
-	a.srv = http.Server{
-		Addr:    a.config.Address,
-		Handler: router,
-	}
+	router := chi.NewRouter()
+	router.Get("/test", handler.SaveHandler(srvc))
+
+	a.srv = server.New(a.config, router)
 
 	return a, nil
 }
 
 func (a *App) Run() error {
-	log.Printf("Listening address: %s", a.srv.Addr)
+	log.Printf("Listening address: %s", a.srv.Network.Addr)
 
-	if err := a.srv.ListenAndServe(); err != nil {
+	if err := a.srv.Network.ListenAndServe(); err != nil {
 		return fmt.Errorf("error occured while listening port: %s", err.Error())
 	}
 
