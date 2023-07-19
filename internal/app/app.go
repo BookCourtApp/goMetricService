@@ -9,17 +9,27 @@ import (
 	"github.com/wanna-beat-by-bit/goMetricService/internal/app/http-server/handler"
 	"github.com/wanna-beat-by-bit/goMetricService/internal/app/http-server/server"
 	"github.com/wanna-beat-by-bit/goMetricService/internal/app/service"
+	"github.com/wanna-beat-by-bit/goMetricService/internal/app/storage/clickhouse"
 )
 
 type App struct {
-	config *config.Config
-	srv    *server.Server
+	config  *config.Config
+	srv     *server.Server
+	storage *clickhouse.Clickhouse
 }
 
 func New() (*App, error) {
 	a := &App{}
 
 	a.config = config.MustLoad()
+
+	db, err := clickhouse.New()
+	if err != nil {
+		return nil, err
+	}
+	a.storage = db
+
+	a.storage.Test()
 
 	srvc := service.New()
 
