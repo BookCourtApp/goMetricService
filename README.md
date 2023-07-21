@@ -27,3 +27,11 @@ make docker-build
 make docker-run
 make metric-start
 ```
+
+# Сложности запуска
+Для работы с superset нужно создать admin пользователя для того, чтобы зайти на сайт с клиентом:
+```
+docker exec -it <superset_container_name> superset fab create-admin \
+    --username=admin --firstname=Admin --lastname=User \
+    --email=admin@example.com --password=admin
+```
