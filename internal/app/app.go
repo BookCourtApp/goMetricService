@@ -29,7 +29,7 @@ func New() (*App, error) {
 	}
 	a.storage = db
 
-	a.storage.Test()
+	a.storage.Test() // тест загрузки метрики в бд, потом убрать
 
 	srvc := service.New()
 
