@@ -2,63 +2,148 @@ package clickhouse
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
+	"time"
 
-	"github.com/ClickHouse/clickhouse-go/v2"
-	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
+	_ "github.com/ClickHouse/clickhouse-go"
+	"github.com/wanna-beat-by-bit/goMetricService/internal/app/storage"
 )
 
 type Clickhouse struct {
-	db driver.Conn
+	db *sql.DB
 }
 
 func New() (*Clickhouse, error) {
 	db, err := connect()
 	if err != nil {
-		return nil, fmt.Errorf("error while connecting to clickhouse: %s", err.Error()) //log.Fatalf("error while connecting: %s", err.Error())
+		return nil, fmt.Errorf("error while connecting to clickhouse: %s", err.Error())
 	}
 
+	log.Println("Connection with clickhouse established")
 	return &Clickhouse{
 		db: db,
 	}, nil
 }
 
-func (c *Clickhouse) Test() error {
-	rows, err := c.db.Query(context.Background(), "SELECT name, sex FROM human")
+func (c *Clickhouse) Init() error {
+	tx, err := c.db.BeginTx(context.Background(), nil)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("error occured while starting transaction: %s", err.Error())
 	}
-	for rows.Next() {
-		var (
-			name, sex string
-		)
-		if err := rows.Scan(
-			&name,
-			&sex,
-		); err != nil {
-			log.Fatal(err)
-		}
-		log.Printf("name: %s, sex: %s", name, sex)
+	query := `
+		create table if not exists metrics(
+			TimeStamp 	DateTime,
+			IsApp 		UInt8,
+			IsAuth 		UInt8,
+			IsNew 		UInt8,
+			ResWidth 	UInt16,
+			ResHeight 	UInt16,
+			UserAgent 	String,
+			UserId 		String,
+			SessionID 	String,
+			DeviceType 	String,
+			Reffer 		String,
+			Stage 		LowCardinality(String),
+			Action 		LowCardinality(String),
+			ExtraKeys 	Array(String),
+			ExtraValues Array(String)
+		) 
+		engine = MergeTree() 
+		order by Action
+		`
+	_, err = tx.ExecContext(context.Background(), query)
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("error occured while inserting in database: %s", err.Error())
 	}
+	err = tx.Commit()
+	if err != nil {
+		return fmt.Errorf("error committing transaction: %s", err.Error())
+	}
+
 	return nil
 }
 
-func connect() (driver.Conn, error) {
-	var (
-		ctx       = context.Background()
-		conn, err = clickhouse.Open(&clickhouse.Options{
-			// Other options like TLS configuration can be added here
-		})
+func (c *Clickhouse) Test(metric storage.Metric) error {
+	tx, err := c.db.BeginTx(context.Background(), nil)
+	if err != nil {
+		return fmt.Errorf("error occured while starting transaction: %s", err.Error())
+	}
+	timestamp, err := time.Parse("2006-01-02 15:04:05", metric.TimeStamp)
+	if err != nil {
+		return fmt.Errorf("error occured while parsing timestamp")
+	}
+	query := `
+		insert into metrics(
+			TimeStamp 	,
+			IsApp 		,
+			IsAuth 	 	,
+			IsNew 		,
+			ResWidth ,
+			ResHeight ,
+			UserAgent ,
+			UserId 		,
+			SessionID,
+			DeviceType,
+			Reffer 	,
+			Stage 	,
+			Action ,
+			ExtraKeys,
+			ExtraValues
+			)
+		values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,)
+	`
+	_, err = tx.ExecContext(context.Background(), query,
+		timestamp,
+		metric.IsApp,
+		metric.IsAuth,
+		metric.IsNew,
+		metric.ResWidth,
+		metric.ResHeight,
+		metric.UserAgent,
+		metric.UserID,
+		metric.SessionID,
+		metric.DeviceType,
+		metric.Reffer,
+		metric.Stage,
+		metric.Action,
+		metric.ExtraKeys,
+		metric.ExtraValues,
 	)
 	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("error occured while inserting in database: %s", err.Error())
+	}
+	err = tx.Commit()
+	if err != nil {
+		return fmt.Errorf("error committing transaction: %s", err.Error())
+	}
+
+	return nil
+}
+
+func connect() (*sql.DB, error) {
+	//connectionString := "tcp://localhost:8123?username=your_username&password=your_password&database=test_db"
+	connectionString := "tcp://localhost:9000?&database=test_db"
+
+	// Create the connection to ClickHouse
+	db, err := sql.Open("clickhouse", connectionString)
+	if err != nil {
+		fmt.Println("Error connecting to ClickHouse:", err)
 		return nil, err
 	}
-	if err := conn.Ping(ctx); err != nil {
-		if exception, ok := err.(*clickhouse.Exception); ok {
-			fmt.Printf("Exception [%d] %s \n%s\n", exception.Code, exception.Message, exception.StackTrace)
-		}
+
+	// Ping the database to verify the connection
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	err = db.PingContext(ctx)
+	if err != nil {
+		fmt.Println("Error pinging ClickHouse:", err)
 		return nil, err
 	}
-	return conn, nil
+
+	//fmt.Println("Connected to ClickHouse!")
+	return db, nil
 }
