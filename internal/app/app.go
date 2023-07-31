@@ -29,12 +29,19 @@ func New() (*App, error) {
 	}
 	a.storage = db
 
-	a.storage.Test() // тест загрузки метрики в бд, потом убрать
+	if err := a.storage.Init(); err != nil {
+		return nil, fmt.Errorf("error while intializing clickhouse: %s", err.Error())
+	}
+	//if err := a.storage.Test(); err != nil {
+	//	return nil, fmt.Errorf("error while testing clickhouse: %s", err.Error())
+	//}
 
-	srvc := service.New()
+	//a.storage.Test() // тест загрузки метрики в бд, потом убрать
+
+	srvc := service.New(a.storage)
 
 	router := chi.NewRouter()
-	router.Get("/test", handler.SaveHandler(srvc))
+	router.Post("/test", handler.SaveHandler(srvc))
 
 	a.srv = server.New(a.config, router)
 

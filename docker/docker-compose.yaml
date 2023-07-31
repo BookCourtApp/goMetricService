@@ -6,20 +6,22 @@ services:
     user: clickhouse
     ports:
       - "9000:9000"
+      - "8123:8123"
     volumes:
       - ./clickhouse-data:/var/lib/clickhouse
     command: ["clickhouse-server", "--config-file=/etc/clickhouse-server/config.xml"]
 
-  superset:
-    image: apache/superset:latest
-    ports:
-      - "8088:8088"
-    environment:
-      - SUPERSET_LOAD_EXAMPLES=yes
-      - PYTHONPATH=/app/superset:$PYTHONPATH
-    volumes:
-      - ./superset_config.py:/app/superset/superset_config.py
-    command: ["superset", "run", "-h", "0.0.0.0", "-p", "8088"]
+  #superset:
+  #  image: apache/superset:latest
+  #  ports:
+  #    - "8088:8088"
+  #  environment:
+  #    - SUPERSET_LOAD_EXAMPLES=yes
+  #    - PYTHONPATH=/app/superset:$PYTHONPATH
+  #    - SUPERSET__SQLALCHEMY_DATABASE_URI=clickhouse://default:@clickhouse:9000
+  #  volumes:
+  #    - ./superset_config.py:/app/superset/superset_config.py
+  #  command: ["superset", "run", "-h", "0.0.0.0", "-p", "8088"]
 volumes:
   clickhouse-data:
 

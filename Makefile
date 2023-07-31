@@ -7,7 +7,7 @@ docker-build:
 	sudo docker build -t clickhouse -f $(DOCKERFILE_PATH) $(BUILD_CONTEXT)
 
 docker-run:
-	sudo docker compose -f $(DOCKER_CONFIG_PATH) up
+	sudo docker compose -f $(DOCKER_CONFIG_PATH) up 
 
 metric-start:
 	go run ./cmd/goMetricService.go -config=$(GO_CONFIG)
