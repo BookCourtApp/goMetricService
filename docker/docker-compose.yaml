@@ -10,6 +10,21 @@ services:
     volumes:
       - ./clickhouse-data:/var/lib/clickhouse
     command: ["clickhouse-server", "--config-file=/etc/clickhouse-server/config.xml"]
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - my_network
+
+  redis_insight:
+    image: redislabs/redisinsight:latest
+    container_name: redis_insight
+    ports:
+      - "8001:8001"
+    networks:
+      - my_network
 
   #superset:
   #  image: apache/superset:latest
@@ -24,4 +39,9 @@ services:
   #  command: ["superset", "run", "-h", "0.0.0.0", "-p", "8088"]
 volumes:
   clickhouse-data:
+
+networks:
+  my_network:
+    driver: bridge
+
 
