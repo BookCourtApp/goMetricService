@@ -35,3 +35,9 @@ docker exec -it <superset_container_name> superset fab create-admin \
     --username=admin --firstname=Admin --lastname=User \
     --email=admin@example.com --password=admin
 ```
+Для создания volume для хранения данных clickhouse нужно сначала создать папку хранения, а затем 
+присвоить ей права, с помощью которых к ней из контейнера будет доступ:
+```
+make clickhouse-data
+sudo chown 101 clickhouse-data
+```
