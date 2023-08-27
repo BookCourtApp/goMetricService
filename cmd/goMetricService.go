@@ -1,23 +1,69 @@
 package main
 
 import (
-	"log"
+	"context"
+	"log/slog"
+	"os"
 
 	"github.com/wanna-beat-by-bit/goMetricService/internal/app"
+	"github.com/wanna-beat-by-bit/goMetricService/internal/app/config"
+)
+
+const (
+	envLocal = "local"
+	envDev   = "dev"
+	envProd  = "prod"
 )
 
 func main() {
-	//TODO: сделать конфиг
-	//TODO: сделать логгер
-	//TODO: сделать работу с хранилищами
-	//TODO: сделтаь эндпойнт
-	//TODO: запустить сервер
+	conf := config.MustLoad()
+	logger := setupLogger(conf.Env)
 
-	a, err := app.New()
+	logger.Info(
+		"Logger enabled",
+		slog.String("env", conf.Env),
+	)
+	logger.Debug("debug messages is enabled")
+
+	a, err := app.New(logger, conf)
 	if err != nil {
-		log.Fatalf("Error occured while starting application: %s", err.Error())
+		logger.Error("fatal error occured", slog.String("error", err.Error()))
+		panic("can't build application")
 	}
 
-	a.Run()
+	logger.Info("starting application")
+	if err := a.Run(); err != nil {
+		logger.Error("fatal error occured",
+			slog.String("error", err.Error()),
+		)
+	}
 
+	if err := a.Stop(context.Background()); err != nil {
+		logger.Error("error while stopping server",
+			slog.String("error", err.Error()),
+		)
+	}
+
+	logger.Info("application exit")
+}
+
+func setupLogger(env string) *slog.Logger {
+	var logger *slog.Logger
+
+	switch env {
+	case envLocal:
+		logger = slog.New(
+			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
+		)
+	case envDev:
+		logger = slog.New(
+			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}),
+		)
+	case envProd:
+		logger = slog.New(
+			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}),
+		)
+	}
+
+	return logger
 }
