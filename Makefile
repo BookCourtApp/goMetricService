@@ -1,4 +1,5 @@
 DOCKER_CONFIG_PATH := docker/docker-compose.yaml
+APP_PATH := ./cmd
 BUILD_CONTEXT := .
 GO_CONFIG := ./config/local.yaml
 
@@ -9,8 +10,14 @@ docker-build:
 docker-run:
 	sudo docker compose -f $(DOCKER_CONFIG_PATH) up 
 
-metric-start:
-	go run ./cmd/goMetricService.go -config=$(GO_CONFIG)
+build:
+	go build -o $(APP_PATH)/goMetricService $(APP_PATH)/goMetricService.go 
+
+run:
+	$(APP_PATH)/goMetricService -config=$(GO_CONFIG)
+
+redis-gui:
+	sudo docker run -p 8001:8001 redislabs/redisinsight:latest	
 
 # Combine build and run targets
-.PHONY: docker-build docker-run metric-start 
+.PHONY: docker-build docker-run build run redis-guid
