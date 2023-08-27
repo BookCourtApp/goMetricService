@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"time"
 
 	_ "github.com/ClickHouse/clickhouse-go"
@@ -21,7 +20,6 @@ func New() (*Clickhouse, error) {
 		return nil, fmt.Errorf("error while connecting to clickhouse: %s", err.Error())
 	}
 
-	log.Println("Connection with clickhouse established")
 	return &Clickhouse{
 		db: db,
 	}, nil
@@ -131,8 +129,7 @@ func connect() (*sql.DB, error) {
 	// Create the connection to ClickHouse
 	db, err := sql.Open("clickhouse", connectionString)
 	if err != nil {
-		fmt.Println("Error connecting to ClickHouse:", err)
-		return nil, err
+		return nil, fmt.Errorf("error connecting to ClickHouse: %s", err.Error())
 	}
 
 	// Ping the database to verify the connection
@@ -140,10 +137,8 @@ func connect() (*sql.DB, error) {
 	defer cancel()
 	err = db.PingContext(ctx)
 	if err != nil {
-		fmt.Println("Error pinging ClickHouse:", err)
-		return nil, err
+		return nil, fmt.Errorf("error while pinging clickhouse: %s", err.Error())
 	}
 
-	//fmt.Println("Connected to ClickHouse!")
 	return db, nil
 }
