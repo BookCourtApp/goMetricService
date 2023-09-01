@@ -1,5 +1,15 @@
 env: "local" # local, dev, prod
 storage_path: "./storage.db"
+clickhouse:
+  host: "localhost:9000"
+  name: ${BOOKCOURT_DB}
+  user: ${BOOKCOURT_USER}
+  password: ${BOOKCOURT_PASSWORD}
+
+redis:
+  host: "localhost:6379" 
+  password: ""
+  name: 0
 http_server:
   address: "localhost:5078"
   timeout: 4s
