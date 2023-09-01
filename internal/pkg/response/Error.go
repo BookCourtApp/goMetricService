@@ -6,6 +6,11 @@ import (
 	"github.com/go-chi/render"
 )
 
+const (
+	StatusBadRequest          = "Invalid request"
+	StatusInternalServerError = "Internal sever error"
+)
+
 type Response struct {
 	Status int    `json:"status"`
 	Error  string `json:"error,omitempty"`
@@ -41,7 +46,7 @@ func ErrBadRequest(err error) render.Renderer {
 	return &ErrResponse{
 		Error:          err,
 		HTTPStatusCode: http.StatusBadRequest,
-		StatusText:     "Invalid request",
+		StatusText:     StatusBadRequest,
 		ErrorText:      err.Error(),
 	}
 }
@@ -50,7 +55,7 @@ func ErrInternalServerError(err error) render.Renderer {
 	return &ErrResponse{
 		Error:          err,
 		HTTPStatusCode: http.StatusInternalServerError,
-		StatusText:     "Internal server error",
+		StatusText:     StatusInternalServerError,
 		ErrorText:      err.Error(),
 	}
 }
