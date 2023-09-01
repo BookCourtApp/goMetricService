@@ -4,6 +4,10 @@ services:
   clickhouse:
     image: yandex/clickhouse-server:latest
     user: clickhouse
+    environment:
+      - CLICKHOUSE_DB=${BOOKCOURT_DB}
+      - CLICKHOUSE_USER=${BOOKCOURT_USER}
+      - CLICKHOUSE_PASSWORD=${BOOKCOURT_PASSWORD}
     ports:
       - "9000:9000"
       - "8123:8123"
