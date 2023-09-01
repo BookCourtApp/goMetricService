@@ -10,9 +10,24 @@ import (
 )
 
 type Config struct {
-	Env         string `yaml:"env" env-default:"local" env-required:"true"`
-	StoragePath string `yaml:"storage_path" env-required:"true"`
-	HTTPServer  `yaml:"http_server"`
+	Env string `yaml:"env" env-default:"local" env-required:"true"`
+	//StoragePath string `yaml:"storage_path" env-required:"true"`
+	Clickhouse `yaml:"clickhouse" env-required:"true"`
+	Redis      `yaml:"redis" env-required:"true"`
+	HTTPServer `yaml:"http_server"`
+}
+
+type Clickhouse struct {
+	Host     string `yaml:"host" env-default:"localhost:9000"`
+	Name     string `yaml:"name" env:"BOOKCOURT_DB" env-default:""`
+	User     string `yaml:"user" env:"BOOKCOURT_USER" env-required:"true"`
+	Password string `yaml:"password" env:"BOOKCOURT_PASSWORD" env-required:"true"`
+}
+
+type Redis struct {
+	Host     string `yaml:"host" env-default:"localhost6379"`
+	Password string `yaml:"password" env-default:""`
+	Name     int    `yaml:"name" env-default:"0"`
 }
 
 type HTTPServer struct {

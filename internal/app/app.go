@@ -27,6 +27,7 @@ type App struct {
 
 func New(logger *slog.Logger, conf *config.Config) (*App, error) {
 	const op = "app.New"
+	var err error
 
 	a := &App{}
 	a.logger = logger
@@ -38,19 +39,18 @@ func New(logger *slog.Logger, conf *config.Config) (*App, error) {
 	appLog.Debug("Building started")
 
 	appLog.Debug("Creating database")
-	db, err := clickhouse.New()
+	a.storage, err = clickhouse.New(a.config)
 	if err != nil {
 		return nil, fmt.Errorf("error while create creating database: %s", err.Error())
 	}
-	a.storage = db
 
-	appLog.Debug("Initializing database")
-	if err := a.storage.Init(); err != nil {
-		return nil, fmt.Errorf("error while intializing clickhouse: %s", err.Error())
-	}
+	//appLog.Debug("Initializing database")
+	//if err := a.storage.Init(); err != nil {
+	//	return nil, fmt.Errorf("error while intializing clickhouse: %s", err.Error())
+	//}
 
 	appLog.Debug("Creating session caching")
-	a.cache, err = RedisCache.New()
+	a.cache, err = RedisCache.New(a.config)
 	if err != nil {
 		return nil, fmt.Errorf("error while initializing redis: %s", err.Error())
 	}

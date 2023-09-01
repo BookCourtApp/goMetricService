@@ -7,19 +7,19 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
+	"github.com/wanna-beat-by-bit/goMetricService/internal/app/config"
 )
 
 type SessionCache struct {
 	client *redis.Client
 }
 
-func New() (*SessionCache, error) {
+func New(conf *config.Config) (*SessionCache, error) {
 	client := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "", // no password set
-		DB:       0,  // use default DB
+		Addr:     conf.Redis.Host,
+		Password: conf.Redis.Password, // no password set
+		DB:       conf.Redis.Name,     // use default DB
 	})
-
 	_, err := client.Ping(context.Background()).Result()
 	if err != nil {
 		return nil, fmt.Errorf("can't establish connection with redis: %s", err.Error())

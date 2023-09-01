@@ -4,9 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net/url"
 	"time"
 
 	_ "github.com/ClickHouse/clickhouse-go"
+	"github.com/wanna-beat-by-bit/goMetricService/internal/app/config"
 	"github.com/wanna-beat-by-bit/goMetricService/internal/app/storage"
 )
 
@@ -14,15 +16,24 @@ type Clickhouse struct {
 	db *sql.DB
 }
 
-func New() (*Clickhouse, error) {
-	db, err := connect()
+func New(conf *config.Config) (*Clickhouse, error) {
+	clickhouse := &Clickhouse{}
+
+	db, err := connect(conf)
 	if err != nil {
 		return nil, fmt.Errorf("error while connecting to clickhouse: %s", err.Error())
 	}
 
-	return &Clickhouse{
-		db: db,
-	}, nil
+	clickhouse.db = db
+	clickhouse.Init()
+	if err != nil {
+		return nil, fmt.Errorf("error while initializing database: %s", err.Error())
+	}
+
+	return clickhouse, nil
+	//return &Clickhouse{
+	//	db: db,
+	//}, nil
 }
 
 func (c *Clickhouse) Init() error {
@@ -122,12 +133,22 @@ func (c *Clickhouse) Test(metric storage.Metric) error {
 	return nil
 }
 
-func connect() (*sql.DB, error) {
+func connect(conf *config.Config) (*sql.DB, error) {
 	//connectionString := "tcp://localhost:8123?username=your_username&password=your_password&database=test_db"
-	connectionString := "tcp://localhost:9000?&database=test_db"
+	//connectionString := "tcp://localhost:9000?&database=test_db"
+
+	dbInfo := url.Values{}
+	dbInfo.Add("database", conf.Clickhouse.Name)
+	dbInfo.Add("username", conf.Clickhouse.User)
+	dbInfo.Add("password", conf.Clickhouse.Password)
+	urlConnectionString := url.URL{
+		Scheme:   "tcp",
+		Host:     conf.Clickhouse.Host,
+		RawQuery: dbInfo.Encode(),
+	}
 
 	// Create the connection to ClickHouse
-	db, err := sql.Open("clickhouse", connectionString)
+	db, err := sql.Open("clickhouse", urlConnectionString.String())
 	if err != nil {
 		return nil, fmt.Errorf("error connecting to ClickHouse: %s", err.Error())
 	}
