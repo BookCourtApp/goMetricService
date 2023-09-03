@@ -49,11 +49,13 @@ func main() {
 	sysExit := make(chan os.Signal, 1)
 	signal.Notify(sysExit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
-	if err := a.Run(); err != nil {
-		logger.Error("fatal error occured",
-			slog.String("error", err.Error()),
-		)
-	}
+	go func() {
+		if err := a.Run(); err != nil {
+			logger.Error("fatal error occured",
+				slog.String("error", err.Error()),
+			)
+		}
+	}()
 	logger.Info("application started")
 
 	<-sysExit
