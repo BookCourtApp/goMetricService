@@ -4,6 +4,8 @@ import (
 	"context"
 	"log/slog"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"fmt"
 	"time"
@@ -44,15 +46,21 @@ func main() {
 		panic("can't build application")
 	}
 
-	logger.Info("starting application")
+	sysExit := make(chan os.Signal, 1)
+	signal.Notify(sysExit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+
 	if err := a.Run(); err != nil {
 		logger.Error("fatal error occured",
 			slog.String("error", err.Error()),
 		)
 	}
+	logger.Info("application started")
 
+	<-sysExit
+
+	logger.Info("Got syscall to exit")
 	if err := a.Stop(context.Background()); err != nil {
-		logger.Error("error while stopping server",
+		logger.Error("error while exiting",
 			slog.String("error", err.Error()),
 		)
 	}
@@ -151,8 +159,19 @@ func (a *App) Stop(ctx context.Context) error {
 	)
 	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
+
+	a.logger.Info("Waiting application to exit")
+
 	if err := a.srv.Network.Shutdown(ctx); err != nil {
-		return fmt.Errorf("error while stopping server gracefully: %s", err.Error())
+		return fmt.Errorf("can't exit http server: %s", err.Error())
+	}
+
+	if err := a.cache.Client.Close(); err != nil {
+		return fmt.Errorf("can't exit redis: %s", err.Error())
+	}
+
+	if err := a.storage.Db.Close(); err != nil {
+		return fmt.Errorf("can't exit clickhouse: %s", err.Error())
 	}
 
 	return nil

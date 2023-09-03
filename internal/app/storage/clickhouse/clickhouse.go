@@ -13,18 +13,18 @@ import (
 )
 
 type Clickhouse struct {
-	db *sql.DB
+	Db *sql.DB
 }
 
 func New(conf *config.Config) (*Clickhouse, error) {
 	clickhouse := &Clickhouse{}
 
-	db, err := connect(conf)
+	Db, err := connect(conf)
 	if err != nil {
 		return nil, fmt.Errorf("error while connecting to clickhouse: %s", err.Error())
 	}
 
-	clickhouse.db = db
+	clickhouse.Db = Db
 	clickhouse.Init()
 	if err != nil {
 		return nil, fmt.Errorf("error while initializing database: %s", err.Error())
@@ -37,7 +37,7 @@ func New(conf *config.Config) (*Clickhouse, error) {
 }
 
 func (c *Clickhouse) Init() error {
-	tx, err := c.db.BeginTx(context.Background(), nil)
+	tx, err := c.Db.BeginTx(context.Background(), nil)
 	if err != nil {
 		return fmt.Errorf("error occured while starting transaction: %s", err.Error())
 	}
@@ -76,7 +76,7 @@ func (c *Clickhouse) Init() error {
 }
 
 func (c *Clickhouse) Test(metric storage.Metric) error {
-	tx, err := c.db.BeginTx(context.Background(), nil)
+	tx, err := c.Db.BeginTx(context.Background(), nil)
 	if err != nil {
 		return fmt.Errorf("error occured while starting transaction: %s", err.Error())
 	}
@@ -148,7 +148,7 @@ func connect(conf *config.Config) (*sql.DB, error) {
 	}
 
 	// Create the connection to ClickHouse
-	db, err := sql.Open("clickhouse", urlConnectionString.String())
+	Db, err := sql.Open("clickhouse", urlConnectionString.String())
 	if err != nil {
 		return nil, fmt.Errorf("error connecting to ClickHouse: %s", err.Error())
 	}
@@ -156,10 +156,10 @@ func connect(conf *config.Config) (*sql.DB, error) {
 	// Ping the database to verify the connection
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
-	err = db.PingContext(ctx)
+	err = Db.PingContext(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error while pinging clickhouse: %s", err.Error())
 	}
 
-	return db, nil
+	return Db, nil
 }
