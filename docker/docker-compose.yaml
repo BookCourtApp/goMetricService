@@ -1,9 +1,11 @@
-version: '3'
+version: '3.7'
 
 services:
   clickhouse:
     image: yandex/clickhouse-server:latest
     user: clickhouse
+    mem_limit: 512m
+    mem_reservation: 128m
     environment:
       - CLICKHOUSE_DB=${BOOKCOURT_DB}
       - CLICKHOUSE_USER=${BOOKCOURT_USER}
@@ -17,18 +19,20 @@ services:
   redis:
     image: redis:latest
     container_name: redis
+    mem_limit: 512m
+    mem_reservation: 128m
     ports:
       - "6379:6379"
     networks:
       - my_network
 
-  redis_insight:
-    image: redislabs/redisinsight:latest
-    container_name: redis_insight
-    ports:
-      - "8001:8001"
-    networks:
-      - my_network
+  #redis_insight:
+  #  image: redislabs/redisinsight:latest
+  #  container_name: redis_insight
+  #  ports:
+  #    - "8001:8001"
+  #  networks:
+  #    - my_network
 
   #superset:
   #  image: apache/superset:latest
