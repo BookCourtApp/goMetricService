@@ -19,60 +19,13 @@ type Clickhouse struct {
 func New(conf *config.Config) (*Clickhouse, error) {
 	clickhouse := &Clickhouse{}
 
-	Db, err := connect(conf)
+	var err error
+	clickhouse.Db, err = connect(conf)
 	if err != nil {
 		return nil, fmt.Errorf("error while connecting to clickhouse: %s", err.Error())
 	}
 
-	clickhouse.Db = Db
-	clickhouse.Init()
-	if err != nil {
-		return nil, fmt.Errorf("error while initializing database: %s", err.Error())
-	}
-
 	return clickhouse, nil
-	//return &Clickhouse{
-	//	db: db,
-	//}, nil
-}
-
-func (c *Clickhouse) Init() error {
-	tx, err := c.Db.BeginTx(context.Background(), nil)
-	if err != nil {
-		return fmt.Errorf("error occured while starting transaction: %s", err.Error())
-	}
-	query := `
-		create table if not exists metrics(
-			TimeStamp 	DateTime,
-			IsApp 		UInt8,
-			IsAuth 		UInt8,
-			IsNew 		UInt8,
-			ResWidth 	UInt16,
-			ResHeight 	UInt16,
-			UserAgent 	String,
-			UserId 		String,
-			SessionID 	String,
-			DeviceType 	String,
-			Reffer 		String,
-			Stage 		LowCardinality(String),
-			Action 		LowCardinality(String),
-			ExtraKeys 	Array(String),
-			ExtraValues Array(String)
-		) 
-		engine = MergeTree() 
-		order by Action
-		`
-	_, err = tx.ExecContext(context.Background(), query)
-	if err != nil {
-		tx.Rollback()
-		return fmt.Errorf("error occured while inserting in database: %s", err.Error())
-	}
-	err = tx.Commit()
-	if err != nil {
-		return fmt.Errorf("error committing transaction: %s", err.Error())
-	}
-
-	return nil
 }
 
 func (c *Clickhouse) Test(metric storage.Metric) error {
@@ -134,20 +87,16 @@ func (c *Clickhouse) Test(metric storage.Metric) error {
 }
 
 func connect(conf *config.Config) (*sql.DB, error) {
-	//connectionString := "tcp://localhost:8123?username=your_username&password=your_password&database=test_db"
-	//connectionString := "tcp://localhost:9000?&database=test_db"
-
 	dbInfo := url.Values{}
 	dbInfo.Add("database", conf.Clickhouse.Name)
 	dbInfo.Add("username", conf.Clickhouse.User)
 	dbInfo.Add("password", conf.Clickhouse.Password)
 	urlConnectionString := url.URL{
 		Scheme:   "tcp",
-		Host:     conf.Clickhouse.Host,
+		Host:     fmt.Sprintf("%s:%s", conf.Clickhouse.Host, conf.Clickhouse.Port),
 		RawQuery: dbInfo.Encode(),
 	}
 
-	// Create the connection to ClickHouse
 	Db, err := sql.Open("clickhouse", urlConnectionString.String())
 	if err != nil {
 		return nil, fmt.Errorf("error connecting to ClickHouse: %s", err.Error())
