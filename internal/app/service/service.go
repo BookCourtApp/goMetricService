@@ -37,20 +37,17 @@ func (s *Service) SaveData(metric storage.Metric) error {
 	)
 
 	logger.Info("Saving metric", slog.Any("data", metric))
-
 	logger.Debug("Getting session of user")
 	sessionId, err := s.cache.GetSession(metric.UserID)
 	if err != nil {
-		logger.Debug("Getting session failed")
-		return fmt.Errorf("error while getting sessionId: %s", sessionId)
+		return fmt.Errorf("%s: can't get sessionID: %s", op, sessionId)
 	}
 
 	metric.SessionID = sessionId
 
 	logger.Debug("Inserting metric to database")
 	if err := s.db.Test(metric); err != nil {
-		logger.Debug("Inserting metric failed")
-		return fmt.Errorf("%s: %s", op, err.Error())
+		return fmt.Errorf("%s: can't insert in database: %s", op, err.Error())
 	}
 	return nil
 }

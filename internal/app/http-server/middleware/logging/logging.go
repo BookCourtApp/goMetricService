@@ -11,11 +11,11 @@ import (
 
 type middlewareLogging func(next http.Handler) http.Handler
 
-func New(logger *slog.Logger) middlewareLogging {
+func New(log *slog.Logger) middlewareLogging {
 	return func(next http.Handler) http.Handler {
 		const op = "middleware.logging"
 
-		logger = logger.With(
+		logger := log.With(
 			slog.String("op", op),
 		)
 
