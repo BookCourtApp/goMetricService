@@ -9,6 +9,10 @@ CLICKHOUSE_CONNECTION = clickhouse://localhost:9000?database=testing
 dc: 
 	sudo -E docker compose -f $(DOCKER_CONFIG_PATH) up 
 
+.PHONY: dg
+dg: 
+	sudo docker build -t gms-container .
+
 .PHONY: build
 build:
 	go build -o $(APP_PATH)/goMetricService $(APP_PATH)/goMetricService.go 
