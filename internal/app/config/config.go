@@ -18,7 +18,8 @@ type Config struct {
 }
 
 type Clickhouse struct {
-	Host     string `yaml:"host" env-default:"localhost:9000"`
+	Host     string `yaml:"host" env-default:"clickhouse"` // env-default = dns lookup in docker
+	Port     string `yaml:"port" env-default:":9000"`
 	Name     string `yaml:"name" env:"BOOKCOURT_DB" env-default:""`
 	User     string `yaml:"user" env:"BOOKCOURT_USER" env-required:"true"`
 	Password string `yaml:"password" env:"BOOKCOURT_PASSWORD" env-required:"true"`
@@ -26,7 +27,7 @@ type Clickhouse struct {
 
 type Redis struct {
 	Host     string `yaml:"host" env-default:"localhost6379"`
-	Password string `yaml:"password" env-default:""`
+	Password string `yaml:"password" env:"BOOKCOURT_PASSWORD" env-default:""`
 	Name     int    `yaml:"name" env-default:"0"`
 }
 
