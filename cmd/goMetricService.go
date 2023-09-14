@@ -111,17 +111,24 @@ func New(logger *slog.Logger, conf *config.Config) (*App, error) {
 		slog.String("op", op),
 	)
 	appLog.Debug("Building started")
-
 	appLog.Debug("Creating database")
-	a.storage, err = clickhouse.New(a.config)
-	if err != nil {
-		return nil, fmt.Errorf("error while create creating database: %s", err.Error())
-	}
 
-	//appLog.Debug("Initializing database")
-	//if err := a.storage.Init(); err != nil {
-	//	return nil, fmt.Errorf("error while intializing clickhouse: %s", err.Error())
-	//}
+	for { //clickhouse connection may take while
+
+		a.storage, err = clickhouse.New(a.config)
+		if err != nil {
+			appLog.Error(
+				"clickhouse initializing",
+				slog.String("error", err.Error()),
+			)
+		} else {
+			break
+		}
+
+		appLog.Debug("trying connect to database in 2 seconds...")
+		time.Sleep(time.Second * 2)
+
+	}
 
 	appLog.Debug("Creating session caching")
 	a.cache, err = RedisCache.New(a.config)
@@ -135,7 +142,7 @@ func New(logger *slog.Logger, conf *config.Config) (*App, error) {
 	router.Use(middleware.RequestID)
 	router.Use(middleware.Recoverer)
 	router.Use(logging.New(logger))
-	router.Post("/test", saveHandler.New(srvc))
+	router.Post("/test", saveHandler.New(a.logger, srvc))
 
 	a.srv = server.New(a.config, router)
 
