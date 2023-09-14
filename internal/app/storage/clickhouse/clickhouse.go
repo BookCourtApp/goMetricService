@@ -33,9 +33,9 @@ func (c *Clickhouse) Test(metric storage.Metric) error {
 	if err != nil {
 		return fmt.Errorf("error occured while starting transaction: %s", err.Error())
 	}
-	timestamp, err := time.Parse("2006-01-02 15:04:05", metric.TimeStamp)
+	timestamp, err := time.Parse(time.DateTime, metric.TimeStamp)
 	if err != nil {
-		return fmt.Errorf("error occured while parsing timestamp")
+		return fmt.Errorf("error occured while parsing timestamp: %s", err.Error())
 	}
 	query := `
 		insert into metrics(
