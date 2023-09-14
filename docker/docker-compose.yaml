@@ -4,8 +4,8 @@ services:
   clickhouse:
     image: yandex/clickhouse-server:latest
     user: clickhouse
-    mem_limit: 512m
-    mem_reservation: 128m
+    mem_limit: 1024m
+    mem_reservation: 512m
     environment:
       - CLICKHOUSE_DB=${BOOKCOURT_DB}
       - CLICKHOUSE_USER=${BOOKCOURT_USER}
@@ -16,15 +16,33 @@ services:
     volumes:
       - ./clickhouse-data:/var/lib/clickhouse
     command: ["clickhouse-server", "--config-file=/etc/clickhouse-server/config.xml"]
+    networks:
+      - gms-network
   redis:
     image: redis:latest
     container_name: redis
+    command: redis-server --requirepass ${BOOKCOURT_PASSWORD} 
     mem_limit: 512m
     mem_reservation: 128m
     ports:
       - "6379:6379"
     networks:
-      - my_network
+      - gms-network
+
+  #gms-container:
+  #  image: gms-container
+  #  mem_limit: 128m
+  #  mem_reservation: 32m
+  #  environment:
+  #    - BOOKCOURT_DB=${BOOKCOURT_DB}
+  #    - BOOKCOURT_USER=${BOOKCOURT_USER}
+  #    - BOOKCOURT_PASSWORD=${BOOKCOURT_PASSWORD}
+  #  ports:
+  #    - "5078:5078"
+  #  depends_on:
+  #    - clickhouse
+  #  networks:
+  #    - gms-network
 
   #redis_insight:
   #  image: redislabs/redisinsight:latest
@@ -32,7 +50,7 @@ services:
   #  ports:
   #    - "8001:8001"
   #  networks:
-  #    - my_network
+  #    - gms-network
 
   #superset:
   #  image: apache/superset:latest
@@ -49,7 +67,7 @@ volumes:
   clickhouse-data:
 
 networks:
-  my_network:
+  gms-network:
     driver: bridge
 
 
