@@ -25,3 +25,4 @@ docker/superset_config.py
 *.env 
 *.envrc
 cmd/goMetricService
+./UML
