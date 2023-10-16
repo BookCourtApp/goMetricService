@@ -1,4 +1,5 @@
 DOCKER_CONFIG_PATH := docker/docker-compose.yaml
+PROJECT_NAME := test_uml_project
 APP_PATH := ./cmd
 BUILD_CONTEXT := .
 GO_CONFIG := ./config/local.yaml
@@ -39,3 +40,21 @@ m-d:
 	migrate -path $(MIGRATIONS_PATH) -database '$(CLICKHOUSE_CONNECTION)' down
 
 # Combine build and run targets
+
+#UML handling, required: goplantuml, plantuml for ubuntu, gio(system linux tool)
+.PHONY: u-create
+u-create:
+	mkdir -p UML
+	goplantuml -aggregate-private-members -show-aggregations -recursive -title="$(PROJECT_NAME)" ./ > ./UML/ClassDiagram.puml	
+
+.PHONY: u-generate
+u-generate:
+	plantuml -tpng -output images ./UML/*.puml
+
+.PHONY: u-open
+u-open:
+	gio open UML/images/*.png
+
+
+.PHONY: uml
+uml: u-create u-generate u-open
