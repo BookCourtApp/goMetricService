@@ -11,7 +11,7 @@ const (
 	StatusInternalServerError = "Internal sever error"
 )
 
-// test
+// test change
 type Response struct {
 	Status int    `json:"status"`
 	Error  string `json:"error,omitempty"`
